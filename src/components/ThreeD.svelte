@@ -1,7 +1,12 @@
 <script lang="ts">
 	import * as THREE from 'three';
-	import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-
+	import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+	import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
+	import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
+	import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
+	import { CrtShader } from '../threed/crtShader';
+	import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
+	import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass';
 	import { browser } from '$app/environment';
 	import Emulator from '../components/Emulator.svelte';
 	import { onDestroy, onMount } from 'svelte';
@@ -28,7 +33,7 @@
 		top = 0;
 		if (y > window.innerHeight) {
 			const scaleFactor = window.innerWidth > 1000 ? 1.2 : 2;
-			opacity = (1 - (y - window.innerHeight) * scaleFactor / window.innerHeight)
+			opacity = 1 - ((y - window.innerHeight) * scaleFactor) / window.innerHeight;
 		} else {
 			opacity = 1;
 		}
@@ -42,16 +47,30 @@
 	});
 
 	onMount(() => {
+		const renderer = new THREE.WebGLRenderer({ canvas });
+
 		//Load EMUc Screen into texture
 		const texture = new THREE.CanvasTexture(emuCanvas);
-		texture.rotation = 4.71239;
+
+		//texture.rotation = 4.71239;
 		texture.repeat.set(2, 3);
 		texture.flipY = false;
 		texture.offset = new THREE.Vector2(0.225, -0.01);
 		texture.center = new THREE.Vector2(0.3, 0.7);
 		texture.wrapT = THREE.ClampToEdgeWrapping;
 		const geo = new THREE.BoxGeometry(0.0038, 0.0065, 0.008);
-		const material = new THREE.MeshBasicMaterial({ map: texture });
+		const material = new THREE.ShaderMaterial({
+			//emissive: new THREE.Color('#ffffff'),
+			//map: texture,
+			vertexShader: CrtShader.vertexShader,
+			fragmentShader: CrtShader.fragmentShader,
+			uniforms: {
+				tDiffuse: { value: texture },
+				iResolution: { type: 'vec2', value: new THREE.Vector2(4000, 4000) }
+			}
+		});
+
+		material.onBeforeCompile(CrtShader, renderer);
 		const mesh = new THREE.Mesh(geo, material);
 
 		//Setup basic scene
@@ -97,18 +116,35 @@
 			emulator.init();
 			onScroll();
 		});
-
-		const renderer = new THREE.WebGLRenderer({ canvas });
 		renderer.setSize(window.innerWidth, window.innerHeight);
 		renderer.setPixelRatio(window.devicePixelRatio);
 
 		camera.position.y = 0.00235;
 
+		const composer = new EffectComposer(renderer);
+
+		const renderPass = new RenderPass(scene, camera);
+		composer.addPass(renderPass);
+
+		//const shader = new ShaderPass(CrtShader);
+		//composer.addPass(shader);
+
+		const bloom = new UnrealBloomPass(
+			new THREE.Vector2(window.innerWidth, window.innerHeight),
+			0.1,
+			0.1,
+			0
+		);
+		composer.addPass(bloom);
+
+		const outputPass = new OutputPass();
+		composer.addPass(outputPass);
+
 		function animate(gltf) {
 			animationFrame = requestAnimationFrame(() => animate(gltf));
 			if (typeof mesh?.material?.map?.needsUpdate !== undefined) {
 				//@ts-ignore
-				mesh.material.map.needsUpdate = true;
+				texture.needsUpdate = true;
 			}
 
 			const boundedScrollY = y > window.innerHeight ? window.innerHeight : y;

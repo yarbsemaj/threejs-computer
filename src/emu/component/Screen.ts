@@ -1,3 +1,5 @@
+import { screenColorHex } from "../../components/store/store";
+
 export class Screen {
     static black = "#000000";
     static red = "#800000";
@@ -15,9 +17,9 @@ export class Screen {
     static bright_blue = "#0000ff";
     static bright_magenta = "#ff00ff";
     static bright_cyan = "#00ffff";
-    static bright_white = "#fff";
+    static bright_white = "#ffffff";
 
-    static default = "#0a0"
+    static default = "#00aa00"
 
     static colourMap = {
         30: Screen.black,
@@ -84,7 +86,7 @@ export class Screen {
         this.cursor = { x: 0, y: 0 };
     }
 
-    showWelcome(){
+    showWelcome() {
         this.displayWelcome = true
     }
 
@@ -148,7 +150,7 @@ export class Screen {
             screnOBJ.colour.bg = screnOBJ.parseColour(colourCode - 10);
         }
     }
-    
+
     newChar(char: string) {
         this.displayWelcome = false
         if (this.escapeSequenceBuilder != "") {
@@ -196,19 +198,19 @@ export class Screen {
         this.canvas.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
         this.canvas.fillStyle = Screen.black;
         this.canvas.fillRect(0, 0, this.canvasElement.width, this.canvasElement.height);
-        //this.canvas.strokeStyle = Screen.default;
-        //this.canvas.lineWidth = 4;
-       //this.canvas.strokeRect(0, 0, this.canvasElement.width, this.canvasElement.height);
 
         this.canvas.font = "16px Windows Command Prompt, monospace";
 
-        const offset = 0;
-        if(this.displayWelcome){
+        let screenColour = { r: 0, g: 0, b: 0 }
+
+        const offset = 1;
+        if (this.displayWelcome) {
             this.canvas.drawImage(this.welcome, offset, offset)
+            screenColorHex.set(0x00aa00)
             return
         }
         let now = new Date();
-        //First draw the background, we have to spit this out so we dont get overdraw
+        //First draw the background, we have to spit this out so we don't get overdraw
         for (let row = 0; row < this.height; row++) {
             for (let col = 0; col < this.width; col++) {
                 let char = this.screenBuffer[row][col] || Screen.defaultChar;
@@ -225,12 +227,35 @@ export class Screen {
                     this.canvas.fillRect(((col + 1) * 10 - 10) + offset, (row * 16 + 4) + offset, 10, 16);
                 }
                 if (char.txt) {
+                    const rgb = hexToRgb(char.colour.fg)
+                    screenColour.r += rgb.r
+                    screenColour.b += rgb.b
+                    screenColour.g += rgb.g
+
                     this.canvas.fillStyle = char.colour.fg
                     this.canvas.fillText(char.txt, (col * 10) + offset, ((row + 1) * 16) + offset);
                 }
             }
         }
 
+        const screenSize = this.height * this.width
+        screenColorHex.set(rgbToHex(screenColour.r / screenSize, screenColour.g / screenSize, screenColour.b / screenSize))
     }
+}
 
+function hexToRgb(hex: string) {
+    var bigint = parseInt(hex.replace('#', ''), 16);
+    var r = (bigint >> 16) & 255;
+    var g = (bigint >> 8) & 255;
+    var b = bigint & 255;
+
+    return { r, g, b };
+}
+
+function rgbToHex(r: number, g: number, b: number) {
+    const c = (v: number) => {
+        var hex = Math.floor(v).toString(16);
+        return hex.length === 1 ? "0" + hex : hex;
+    }
+    return parseInt(c(r) + c(g) + c(b), 16);
 }

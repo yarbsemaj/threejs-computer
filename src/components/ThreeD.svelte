@@ -11,6 +11,13 @@
 	import Emulator from '../components/Emulator.svelte';
 	import { onDestroy, onMount } from 'svelte';
 	import Loader from './loader/Loader.svelte';
+	import { screenColorHex } from './store/store';
+
+	let screenColor: number;
+
+	screenColorHex.subscribe((value) => {
+		screenColor = value;
+	});
 
 	let emuCanvas: HTMLCanvasElement;
 	let canvas: HTMLCanvasElement;
@@ -32,8 +39,9 @@
 		canvasPosition = 'fixed';
 		top = 0;
 		if (y > window.innerHeight) {
-			const scaleFactor = window.innerWidth > 1000 ? 1.2 : 2;
+			const scaleFactor = window.innerWidth > 768 ? 1.2 : 2;
 			opacity = 1 - ((y - window.innerHeight) * scaleFactor) / window.innerHeight;
+			if (opacity < 0.2) opacity = 0.2
 		} else {
 			opacity = 1;
 		}
@@ -61,17 +69,17 @@
 		//texture.center = new THREE.Vector2(0.3, 0.7);
 		//texture.wrapT = THREE.ClampToEdgeWrapping;
 		const geo = new THREE.BoxGeometry(0.0038, 0.0065, 0.008);
-		const material = new THREE.ShaderMaterial({
-			//emissive: new THREE.Color('#ffffff'),
-			//emissiveMap: texture,
-			//map: texture,
-			vertexShader: CrtShader.vertexShader,
-			fragmentShader: CrtShader.fragmentShader,
-			uniforms: {
-				tDiffuse: { value: texture },
-				iResolution: { type: 'vec2', value: new THREE.Vector2(100000, 2650) }
-			}
-		});
+		const material =
+			window.innerWidth > 1000
+				? new THREE.ShaderMaterial({
+						vertexShader: CrtShader.vertexShader,
+						fragmentShader: CrtShader.fragmentShader,
+						uniforms: {
+							tDiffuse: { value: texture },
+							iResolution: { type: 'vec2', value: new THREE.Vector2(100000, 2650) }
+						}
+				  })
+				: new THREE.MeshBasicMaterial({ map: texture });
 
 		material.onBeforeCompile(CrtShader, target2);
 
@@ -83,7 +91,7 @@
 			0.2,
 			window.innerWidth / window.innerHeight,
 			0.1,
-			10
+			100
 		);
 
 		const light = new THREE.AmbientLight(0x303030); // soft white light
@@ -105,14 +113,17 @@
 		spotLight.shadow.focus = 1;
 		scene.add(spotLight);
 
+		const screenGlow = new THREE.PointLight(screenColor, 0.004, 0.01);
+		screenGlow.position.set(0.0025, 0.0025, 0);
+		screenGlow.castShadow = true;
 		// Load the Model
 		const loader = new GLTFLoader();
 		loader.load('/retro_computer.glb', (gltf) => {
-			const screen = new THREE.PointLight(0x00aa00, 0.001, 0);
-			screen.position.set(0.0025, 0.0025, 0);
 			gltf.scene.children[2].material = material;
 			const model = gltf.scene;
-			model.add(screen);
+			model.castShadow = true;
+			model.receiveShadow = true;
+			model.add(screenGlow);
 			scene.add(model);
 			animate(model);
 
@@ -122,32 +133,20 @@
 		});
 		renderer.setSize(window.innerWidth, window.innerHeight);
 		renderer.setPixelRatio(window.devicePixelRatio);
+		renderer.shadowMap.enabled = true;
 
 		camera.position.y = 0.00235;
 
-		const composer = new EffectComposer(renderer);
-
-		const renderPass = new RenderPass(scene, camera);
-		composer.addPass(renderPass);
-
-		//const shader = new ShaderPass(CrtShader);
-		//composer.addPass(shader);
-
-		const bloom = new BloomPass(
-		);
-		composer.addPass(bloom);
-
-		const outputPass = new OutputPass();
-		composer.addPass(outputPass);
-
 		function animate(gltf) {
 			animationFrame = requestAnimationFrame(() => animate(gltf));
-			if (typeof mesh?.material?.map?.needsUpdate !== undefined) {
+			if (typeof texture.needsUpdate !== undefined) {
 				//@ts-ignore
 				texture.needsUpdate = true;
 			}
 
-			mesh.scale.set(10, 10 ,10)
+			screenGlow.color.set(screenColor);
+
+			mesh.scale.set(10, 10, 10);
 
 			const boundedScrollY = y > window.innerHeight ? window.innerHeight : y;
 			let baseZ = window.innerWidth > 1000 ? 2 : 6;
@@ -160,7 +159,7 @@
 
 			gltf.rotation.y = 4.7 - boundedScrollY / window.innerHeight;
 
-			renderer.render(scene,camera);
+			renderer.render(scene, camera);
 		}
 	});
 </script>

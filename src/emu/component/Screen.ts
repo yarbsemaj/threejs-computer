@@ -61,8 +61,8 @@ export class Screen {
 
         let scale = 1
         this.canvasElement = element;
-        const widthPx = 763
-        const heightPx = 540
+        const widthPx = 650
+        const heightPx = 530
         let ctx = this.canvasElement.getContext("2d") as CanvasRenderingContext2D;
         this.canvasElement.style.width = widthPx + "px";
         this.canvasElement.style.height = heightPx + "px";
@@ -196,13 +196,13 @@ export class Screen {
         this.canvas.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
         this.canvas.fillStyle = Screen.black;
         this.canvas.fillRect(0, 0, this.canvasElement.width, this.canvasElement.height);
-        this.canvas.strokeStyle = Screen.default;
-        this.canvas.lineWidth = 1;
-        this.canvas.strokeRect(0, 0, this.canvasElement.width, this.canvasElement.height);
+        //this.canvas.strokeStyle = Screen.default;
+        //this.canvas.lineWidth = 4;
+       //this.canvas.strokeRect(0, 0, this.canvasElement.width, this.canvasElement.height);
 
         this.canvas.font = "16px Windows Command Prompt, monospace";
 
-        const offset = 5;
+        const offset = 0;
         if(this.displayWelcome){
             this.canvas.drawImage(this.welcome, offset, offset)
             return

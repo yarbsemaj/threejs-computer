@@ -47,30 +47,34 @@
 	});
 
 	onMount(() => {
+		const target2 = new THREE.WebGLRenderer();
+
 		const renderer = new THREE.WebGLRenderer({ canvas });
 
 		//Load EMUc Screen into texture
 		const texture = new THREE.CanvasTexture(emuCanvas);
 
 		//texture.rotation = 4.71239;
-		texture.repeat.set(2, 3);
+		//texture.repeat.set(2, 3);
 		texture.flipY = false;
-		texture.offset = new THREE.Vector2(0.225, -0.01);
-		texture.center = new THREE.Vector2(0.3, 0.7);
-		texture.wrapT = THREE.ClampToEdgeWrapping;
+		//texture.offset = new THREE.Vector2(0.225, -0.01);
+		//texture.center = new THREE.Vector2(0.3, 0.7);
+		//texture.wrapT = THREE.ClampToEdgeWrapping;
 		const geo = new THREE.BoxGeometry(0.0038, 0.0065, 0.008);
 		const material = new THREE.ShaderMaterial({
 			//emissive: new THREE.Color('#ffffff'),
+			//emissiveMap: texture,
 			//map: texture,
 			vertexShader: CrtShader.vertexShader,
 			fragmentShader: CrtShader.fragmentShader,
 			uniforms: {
 				tDiffuse: { value: texture },
-				iResolution: { type: 'vec2', value: new THREE.Vector2(4000, 4000) }
+				iResolution: { type: 'vec2', value: new THREE.Vector2(100000, 2650) }
 			}
 		});
 
-		material.onBeforeCompile(CrtShader, renderer);
+		material.onBeforeCompile(CrtShader, target2);
+
 		const mesh = new THREE.Mesh(geo, material);
 
 		//Setup basic scene
@@ -79,7 +83,7 @@
 			0.2,
 			window.innerWidth / window.innerHeight,
 			0.1,
-			1000
+			10
 		);
 
 		const light = new THREE.AmbientLight(0x303030); // soft white light
@@ -138,7 +142,7 @@
 		composer.addPass(bloom);
 
 		const outputPass = new OutputPass();
-		composer.addPass(outputPass);
+		//composer.addPass(outputPass);
 
 		function animate(gltf) {
 			animationFrame = requestAnimationFrame(() => animate(gltf));
@@ -147,8 +151,10 @@
 				texture.needsUpdate = true;
 			}
 
+			mesh.scale.set(10, 10 ,10)
+
 			const boundedScrollY = y > window.innerHeight ? window.innerHeight : y;
-			let baseZ = window.innerWidth > 1000 ? 2.3 : 6;
+			let baseZ = window.innerWidth > 1000 ? 2 : 6;
 			const zscale = window.innerWidth > 1000 ? 4 : 7;
 
 			const baseY = window.innerWidth > 1000 ? 0.00235 : 0;
@@ -158,7 +164,7 @@
 
 			gltf.rotation.y = 4.7 - boundedScrollY / window.innerHeight;
 
-			renderer.render(scene, camera);
+			composer.render();
 		}
 	});
 </script>

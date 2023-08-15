@@ -46,17 +46,19 @@ export const CrtShader = {
 // Hardness of scanline.
 //  -8.0 = soft
 // -16.0 = medium
-float hardScan=-8.0;
+float hardScan=-16.0;
 
 // Hardness of pixels in scanline.
 // -2.0 = soft
 // -4.0 = hard
-float hardPix=-3.0;
+float hardPix=-4.0;
 
 // Display warp.
 // 0.0 = none
 // 1.0/8.0 = extreme
-vec2 warp=vec2(1.0/32.0,1.0/24.0); 
+vec2 warp=vec2(1.0/64.0,1.0/48.0);
+//vec2 warp=vec2(0.0,0.0);
+
 
 // Amount of shadow mask.
 float maskDark=0.5;

@@ -70,6 +70,7 @@
 			setTimeout(() => {
 				theComputer.addToKeyboardBuffer('E9000\n');
 			}, 50);
+			keyboardActive = true;
 		}
 	};
 
@@ -112,7 +113,7 @@
 	});
 
 	onMount(async () => {
-		screen = new Screen(75, 33, canvas);
+		screen = new Screen(65, 33, canvas);
 		let emuConfig = {
 			updateInterval: 1, // ms tick interval
 			numCyclesPerTick: 7372 * 3.5, // clock cycles per interval we have to multiply this by 3.5 to match speed for some reason

@@ -5,7 +5,7 @@
 	import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
 	import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 	import { CrtShader } from '../threed/crtShader';
-	import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
+	import { BloomPass } from 'three/examples/jsm/postprocessing/BloomPass';
 	import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass';
 	import { browser } from '$app/environment';
 	import Emulator from '../components/Emulator.svelte';
@@ -133,16 +133,12 @@
 		//const shader = new ShaderPass(CrtShader);
 		//composer.addPass(shader);
 
-		const bloom = new UnrealBloomPass(
-			new THREE.Vector2(window.innerWidth, window.innerHeight),
-			0.1,
-			0.1,
-			0
+		const bloom = new BloomPass(
 		);
 		composer.addPass(bloom);
 
 		const outputPass = new OutputPass();
-		//composer.addPass(outputPass);
+		composer.addPass(outputPass);
 
 		function animate(gltf) {
 			animationFrame = requestAnimationFrame(() => animate(gltf));
@@ -164,7 +160,7 @@
 
 			gltf.rotation.y = 4.7 - boundedScrollY / window.innerHeight;
 
-			composer.render();
+			renderer.render(scene,camera);
 		}
 	});
 </script>
